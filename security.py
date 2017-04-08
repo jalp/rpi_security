@@ -2,10 +2,16 @@
 
 import os
 import subprocess
+import logging
 import RPi.GPIO as GPIO
 from picamera import PiCamera
 from datetime import datetime
 from time import sleep
+
+LOG_LEVEL = logging.INFO
+LOG_FILE = '/home/pi/projects/security/security.log'
+LOG_FORMAT = '%(asctime)s %(levelname)s %(message)s'
+logging.basicConfig(filename=LOG_FILE, format=LOG_FORMAT, level=LOG_LEVEL)
 
 GPIO.setmode(GPIO.BCM)
 PIR_PIN = 17
@@ -16,24 +22,23 @@ directory = '/home/pi/projects/security/cam/'
 if not os.path.exists(directory):
     os.makedirs(directory)
 
-print('Starting...')
-
 
 def callback(PIR_PIN):
     send_message(take_picture())
 
 
 def take_picture():
-    print('Taking picture...')
-    file_date = datetime.now().strftime("%Y-%m-%d-%H:%M")
+    logging.info('Taking picture...')
+    file_date = datetime.now().strftime('%Y-%m-%d-%H:%M')
     with PiCamera() as picam:
+        picam.rotation = 180
         picam.start_preview()
         picam.annotate_text_size = 20
         picam.annotate_text = '{0}'.format(datetime.now().strftime('%c'))
         sleep(2)
-        picam.capture('{0}/image{1}.jpg'.format(directory, file_date))
+        picam.capture('{0}image{1}.jpg'.format(directory, file_date))
         picam.stop_preview()
-        print('Recording video')
+        logging.info('Recording video')
         picam.start_recording('{0}video{1}.h264'.format(directory, file_date))
         sleep(10)
         picam.stop_recording()
@@ -46,26 +51,27 @@ def send_message(file_date):
         ['telegram-cli', '--wait-dialog-list', '--disable-link-preview', '--disable-colors', '--disable-readline'],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         bufsize=1, shell=True)
-    print('Telegram started')
+    logging.info('Telegram started')
     sleep(2)
-    print('Sending message')
+    logging.info('Sending message')
     command = 'msg Jalp Movimiento en casa!!!'
     telegram.stdin.write('{0}\n'.format(command).encode('utf-8'))
     telegram.stdin.flush()
 
-    print('Message sent! Closing telegram')
+    logging.info('Message sent! Closing telegram')
     telegram.stdin.write('quit\n'.encode('utf-8'))
     telegram.stdin.flush()
 
-    print('Sending photo')
-    subprocess.Popen(['./telegram_send_image.sh', '{0}/image{1}.jpg'.format(directory, file_date)])
+    logging.info('Sending photo')
+    subprocess.Popen(
+        ['/home/pi/projects/security/telegram_send_image.sh', '{0}image{1}.jpg'.format(directory, file_date)])
 
 
 try:
     GPIO.add_event_detect(PIR_PIN, GPIO.RISING, callback=callback, bouncetime=200)
-    print('Waiting for movement')
+    logging.info('Waiting for movement')
     while True:
         sleep(15)
 except KeyboardInterrupt:
-    print('Exit')
+    logging.info('Exit')
     GPIO.cleanup()
