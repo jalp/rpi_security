@@ -47,50 +47,30 @@ def take_picture():
 
 
 def send_message(file_date):
-    telegram = subprocess.Popen(
-        ['telegram-cli',
-         '--wait-dialog-list',
-         '--disable-link-preview',
-         '--disable-colors',
-         '--disable-readline',
-         ],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        bufsize=1, shell=True)
-    logging.info('Telegram started')
-    sleep(2)
-
-    logging.info('Sending message')
     command = 'msg Jalp Movimiento en casa!!!'
-    telegram.stdin.write('{0}\n'.format(command).encode('utf-8'))
-    telegram.stdin.flush()
-
-    logging.info('Message sent! Closing telegram')
-    telegram.stdin.write('quit\n'.encode('utf-8'))
-    telegram.stdin.flush()
-
+    subprocess.Popen(['telegram-cli',
+                      '--log-level', '0',
+                      '--verbosity', '0',
+                      '--wait-dialog-list',
+                      '--disable-link-preview',
+                      '--disable-colors',
+                      '--disable-readline',
+                      '--disable-output',
+                      '--exec', '{0}'.format(command.replace('\n', '\\n'))],
+                     stdout=subprocess.PIPE)
     sleep(1)
 
-    telegram = subprocess.Popen(
-        ['telegram-cli', '--wait-dialog-list', '--disable-link-preview', '--disable-colors', '--disable-readline'],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        bufsize=1, shell=True)
-    logging.info('Telegram started')
-    sleep(2)
-
-    logging.info('Sending photo')
-    command = 'send_photo Jalp {0}image{1}.jpg'.format(directory, file_date)
-    telegram.stdin.write('{0}\n quit\n'.format(command).encode('utf-8'))
-    telegram.stdin.flush()
-    while True:
-        line = telegram.stdout.readline()
-        if line != '':
-            # the real code does filtering here
-            print "test:", line.rstrip()
-        else:
-            break
-#    logging.info('Sending photo')
-#    subprocess.Popen(
-#        ['/home/pi/projects/security/telegram_send_image.sh', '{0}image{1}.jpg'.format(directory, file_date)])
+    text = '{0}image{1}.jpg'.format(directory, file_date)
+    subprocess.Popen(['telegram-cli',
+                      '--log-level', '0',
+                      '--verbosity', '0',
+                      '--wait-dialog-list',
+                      '--disable-link-preview',
+                      '--disable-colors',
+                      '--disable-readline',
+                      '--disable-output',
+                      '--exec', 'send_photo Jalp "{0}"'.format(text.replace('\n', '\\n'))],
+                     stdout=subprocess.PIPE)
 
 
 try:
