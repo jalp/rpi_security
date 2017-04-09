@@ -29,7 +29,7 @@ def callback(PIR_PIN):
 
 def take_picture():
     logging.info('Taking picture...')
-    file_date = datetime.now().strftime('%Y-%m-%d-%H:%M')
+    file_date = datetime.now().strftime('%Y-%m-%d-%H:%M%S')
     with PiCamera() as picam:
         picam.rotation = 180
         picam.start_preview()
